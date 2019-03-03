@@ -10,3 +10,4 @@ kramdown:
     css_class: 'highlight'
 
 permalink: /:title/
+baseurl: "https://zantyr.github.io/"
