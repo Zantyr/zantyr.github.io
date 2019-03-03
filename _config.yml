@@ -1,9 +1,3 @@
 version: v1.2.0
 name: Weave
-permalink: /:title/
-exclude:
-  - Gemfile
-  - Gemfile.lock
-  - LICENSE
-  - README.md
-- CNAME
+
