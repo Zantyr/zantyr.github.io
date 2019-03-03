@@ -1,3 +1,9 @@
+---
+layout: default
+title: Recognition of digit string in Keras
+author: PT
+---
+
 # Recognition of digit string in Keras
 
 Hi! Recently I'm struggling with integrating the Plain Old(tm) WFST with CTC predictions, I wanted

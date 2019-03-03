@@ -1,3 +1,9 @@
+---
+layout: default
+title: Progressive neural networks
+author: PT
+---
+
 # Progressive neural networks
 
 In this text, I present an introduction to progressive neural networks, which is an interesting multi-task architecture; I also introduce an example implementation in Keras.

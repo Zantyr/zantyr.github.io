@@ -1,3 +1,10 @@
+---
+layout: default
+title: Multi-task learning in speech technologies
+author: PT
+---
+
+
 # Multi-task learning in speech technologies
 
 Humans are already bested by machines in particular tasks. Sure, the digital intelligence is still vulnerable to even one-pixel disturbances in the data, but the progress in the field is impressive, 

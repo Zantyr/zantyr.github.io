@@ -1,3 +1,9 @@
+---
+layout: default
+title: Basic neural network with backpropagation in C#
+author: PT
+---
+
 # Basic neural network with backpropagation in C#
 
 Hi! Recently I've got C# on my CS course and to familiarize myself more with the topic, I wanted to do something both in line with my interests and that would let me learn more about .NET platform.

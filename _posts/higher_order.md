@@ -1,3 +1,9 @@
+---
+layout: default
+title: Higher order layers
+author: PT
+---
+
 # Higher order layers
 
 What would happen if we wanted neural network to predict weight of the proper network? We can actually

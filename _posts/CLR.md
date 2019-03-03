@@ -1,3 +1,9 @@
+---
+layout: default
+title: Circulating Learning Rate and super-convergence
+author: PT
+---
+
 # Circulating Learning Rate and super-convergence
 
 The most visible recent achievements in the field of ML involve multitude of data and powerful models processed by multiple nodes. This general strategy is more feasible for large organisations, because
