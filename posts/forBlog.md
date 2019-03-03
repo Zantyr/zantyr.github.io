@@ -1,0 +1,111 @@
+# Multi-task learning in speech technologies
+
+Humans are already bested by machines in particular tasks. Sure, the digital intelligence is still vulnerable to even one-pixel disturbances in the data, but the progress in the field is impressive, 
+taking for example ImageNet challenge, where algorithms have lower error rate than best human annotators. Fortunately, we shouldn't be afraid of waking up in sci-fi world soon. First, the algorithms
+ are fragile, but second - they're nowhere near of being intelligent.
+
+General Artificial Intelligence, being the common trope of a futuristic worldview, is far from contemporary. By GAI, I understand an actor being able to adapt to various situations, even in unknown scenarios.
+The greatest breakthroughs in AI were in single, very narrow and focused tasks - it is nowhere close to intelligence, moreover - those super-polished models are not able to do a thing outside their limited
+domain of application. Try to teach them something new - and soon they'll forget the very task they were designed to solve. 
+
+The effect known as catastrophic forgetting led researchers to devising new methods of learning models to be a little bit general. The multi-task learning, as it turns out, has more beneficial effects, than
+simply cramming more knowledge into single set of parameters. Careful choice of related tasks may be used to make up for undersampled datasets, improve the results beyond the baseline trained on single set
+of data alone, mix strengths of various approaches into one model etc. A fairly compherensive guide to MTL architectures may be found on [Sebastian Ruder's series of blogposts][16]. More information also may
+ be found [there][17].
+
+Long short story, turns out MTL is used in speech technology research in various tasks. This short article should serve as a short summary of recent advances in ASR and paralinguistics in the light of using
+ multiple goals/losses/sources.
+
+## Kinds of multi-task learning
+
+Multi-task learning in neural networks is essentially divided to hard- and soft-parameters sharing. Hard parameter sharing is essentially having common layers in each model.  Soft-parameter sharing is about
+enforcing constraints between the layers, think L1L2 regularisation on a difference of weights between layers. In both approaches the goal is to ensure, that the models learn a common representation. If the 
+tasks are similar, the common representation will probably be more general than in case of a single application domain.
+
+MTL uses several different architectures diverging from sequential mode of learning. [Meyerson & Miikkulainen][13] present an overview of different classes of MTL networks:
+
+![MTL network types](mtl-netTypes.jpg)
+
+A classic approach is to build a tree-like structure. Each leaf node represents a separate task with its own loss, while a common root ensures the common representation. This architecture may have more
+common layers, with only single layers for outputs. Column-based approach may use soft sharing, in which case each model is a separate graph; or it may use architectures, where layers from other models are
+frozen during training. A prime example are the [progressive neural networks][14]. The tree-like structure may also diverge at different points, as shown in the category c). Universal representation models
+try to emulate the learning process of a human - diverse dataset create one model with normalization application to adapt the universal model to every tasks. Universal representations are used to train
+models on fairly diverse tasks, as shown by [Bilen & Vedaldi.][15]
+
+An important distinction to be made is between auxiliary and main task. Not always all criteria are the most relevant - in majority of cases we want to improve the score on a single task, while putting less
+prominence on the others.
+
+## Applications in speech technology 
+
+MTL comes in handy when there is insufficient data. Prime example is fitting an acoustic model for ASR for languages with insufficient coverage, exemplified in papers of [Zhou et al.][18], [Tong et al.][19] or 
+or [Karafiát et al.][6].
+
+An interesting example is using so called _mismatched transcriptions_. Those are faux data produced by annotators unfamiliar with the language being transcribed. Using them as an auxiliary task boosts the main one.
+
+Using multiple corpora is also a thing, especially given that most speech dataset are unavailable for unaffiliated researchers and even then, the most important ones are ridiculously priced. Producing a corpus
+for serious experiments is a great logistic challenge and a fair expense. Mixing several emotional corpora, in two different languages, was shown by [Kim et al][1]. The method used LSTM with hard parameter sharing to
+produce higher level features for each task and Extreme Learning Machine at the top as an aggregator of the features. Moveover, auxiliary tasks in form of sex/age recognition and naturalness assessment were introduced.
+
+MTL is also used to fight differences between training conditions and application domain. [Mirsamadi & Hansen][2] introduce multi-domain approach, where the network adaptation is achieved by inserting and training additional layer into the model
+
+A solution by [Zhang et al.][3] mixes two popular approaches of denoising by training a model with three different types of outputs - ideal ration masks, ideal binary masks and denoised spectrogram.
+
+Joint prediction of different measures is also used to directly estimate values of dominance, valence and arousal in speech. There three quantities cast human emotions into a continuous space of affects, 
+which usually is done training three different models for each value. [A work by Parthasarathy & Busso][4] explores the possibility of using common layers for three models, testing accuracies given one property as a main goal and the rest
+as auxiliary. Two architectures were presented. The first is actually plain sequential model with output vector of length three. The second one adds a hidden layer for each of the dimensions. MSE are calculated
+independently for each dimension, and total loss is a weighed sum. The paper uses Concordance Correlation Coefficient as a metric for evaluation, which was used for example in AVEC 2016.
+
+Speech recognition has a problem of differences between each speaker's timbre. Often models struggle with different age groups (especially children) and require data from many speakers. Learning speaker 
+identification alongside monophone model was presented in [Tan et al.][5], where bottleneck features (used in speaker verification) and monophones are outputs from a model. Monophone and botleneck-features are used 
+as parallel outputs of the model and slightly improve Word Error Rate. Speaking rate is used as a feature, being introduced by DNN (?) with 11-frame context.
+
+Different age groups could be introduced in MTL manner but no study was found on it.
+
+Another type of adaptation is presented by [Karafiát et al.][6]. In this approach, apart from using multilingual data, speaker-specific features are inserted in penultimate layer of the model. These features optionally are
+passed to a small NN to transform them before inputting to the speech model. In each of the tested languages an improvement of 0.9-1.6% was noted.
+
+Mixing different losses is used to mitigate problem arising from weaknesses of the losses. This was presented in [Lu et al.][7], where Connectionist Temporal Classification was used alongside with Conditional Random
+ Fields. CRF function was defined in terms of RNN and trained alongside main model, with phoneme boundaries known. The hidden states of CRF's RNN were the fed as a feature vector to the main model after ultiple
+ nonlinear transformation with labels. (This is some kind of embedding layer I cannot understand).
+
+While training end-to-end models that transcribe features directly to characters are a hot topic, phoneme information may still be used as an auxiliary task to improve CER of end-to-end model.
+In work of [Toshniwal et al.][8], the losses corresponding to phoneme and phoneme-state information were injected at different lower layers. CTC was used alongside traditional loglikelihood loss. Similarly,
+[Kim et al.][9] show that CTC may be connected with attention-based learning, by training a common encoder and then using CTC or attention based decoder as two branches in the NN structure, as shown below.
+
+![Joint training of CTC and attention-based decoder](mtl-ctc-attention.jpg)
+
+[Thanda & Venkatesan][10] present solution of recognition of speech from audiovisual features. Lips are detected and added as features alogside filterbank features. Two GMM-HMM models were previously trained using audio and visual
+ features separately to obtain label sequences. The MTL model is trained using two tasks - first one uses all data along with suppressing one of the modalities. Secondary task has only visual modality.
+
+[Tang et al.][11] point at negative correlation between features in speech recognition and content insensitive tasks, such as emotion or speaker recognition. Another approach was applied to these tasks: two recurrent models,
+predicting phonemes and emotions incorporate outputs of each other as input features for prediction of next timestep. A modified LSTM structure is used, which is still capable of backpropagation learning.
+
+Accents also provide additional source of confusion. Modelling accents as separate tasks in a MTL framework was presented in ([Yang et al.][12]). BLSTM and DNN projection layers were used, similarly to recurrent convolutional
+ networks, with CTC loss for speech. A branch from lowest layer was introduced, with DNN to recognize dialect - this was trained using cross-entropy. 
+
+## Summary
+
+This overview is by no way complete, but I try to highlight advances in this particular subfield. I hope to gain more understanding of it in the future and that this collection of references may be found
+useful.
+
+<!-- References -->
+
+[1]: http://www.isca-speech.org/archive/Interspeech_2017/pdfs/0736.PDF
+[2]: http://www.isca-speech.org/archive/Interspeech_2017/pdfs/0398.PDF
+[3]: http://www.isca-speech.org/archive/Interspeech_2017/pdfs/0240.PDF
+[4]: http://www.isca-speech.org/archive/Interspeech_2017/abstracts/1494.html
+[5]: https://pdfs.semanticscholar.org/6af8/a848221281148d1fc9b2835d935f9a8453aa.pdf
+[6]: http://www.isca-speech.org/archive/Interspeech_2017/pdfs/1775.PDF
+[7]: http://www.isca-speech.org/archive/Interspeech_2017/pdfs/0071.PDF
+[8]: http://www.isca-speech.org/archive/Interspeech_2017/pdfs/1118.PDF
+[9]: https://arxiv.org/pdf/1609.06773.pdf
+[10]: https://arxiv.org/pdf/1701.02477.pdf
+[11]: https://arxiv.org/pdf/1603.09643.pdf
+[12]: https://arxiv.org/pdf/1802.02656.pdf
+[13]: https://arxiv.org/pdf/1711.00108.pdf
+[14]: https://arxiv.org/abs/1606.04671.pdf
+[15]: https://arxiv.org/pdf/1701.07275.pdf
+[16]: http://ruder.io/multi-task/index.html
+[17]: https://arxiv.org/pdf/1707.08114.pdf
+[18]: http://www.isca-speech.org/archive/Interspeech_2017/pdfs/0111.PDF
+[19]: http://www.isca-speech.org/archive/Interspeech_2017/pdfs/1242.PDF

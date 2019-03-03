@@ -1,0 +1,154 @@
+body {
+	background-color: #002b36;
+	color:#839496 ;
+	font-family: "Open Sans", sans-serif;
+	padding: 0;
+	margin: 0;
+}
+
+h1, h2, h3, h4, h5 {
+	color:#268bd2;
+	font-family:"Merriweather", "Times New Roman", serif;		
+	padding: 0;
+}
+
+a {
+	color:#2aa198;
+}
+
+a:visited {
+	color:#859900;
+}
+
+
+b, i, em {
+	color:#268bd2;
+}
+
+p {
+    text-align: justify;
+    text-justify: inter-word;
+    margin: 0.5em 0;
+}
+
+div{
+	display: block;
+	padding: 0;
+	margin: 0;
+}
+
+ul.no-decor{
+	list-style-type: none;	
+}
+
+.code{
+	background-color:#104060;
+	overflow-y:auto;
+	white-space:nowrap;
+}
+
+red-bold{
+	font-weight:bold;
+	color:#dc322f;
+}
+
+blue{
+	color:#268bd2;
+}
+
+input{
+	display:block;
+}
+
+textarea{
+	width:100%;
+    resize: none;	
+}
+
+@media screen {
+	#header{
+		background-color: #073642;
+	}
+	#header.wide{
+		display:none;
+	}
+	#header.mobile{
+		display: block;
+		width: 100%;
+		margin: 0;
+	}
+	#content-block{
+		display: block;
+		padding: 0;
+	}
+	#content{
+		background-color: #073642;
+		width: 100%;
+		padding: 0.4em;
+	}
+	#content-wide{
+		background-color: #073642;
+		width: 100%;
+		padding: 0.4em;
+	}
+	#comments{
+		background-color: #073642;
+		display:block;
+		width:100%;
+		padding: 0.4em;
+		margin-top: 3em;
+	}
+}
+
+
+
+@media screen and (min-width: 1000px) {
+	#header{
+		background-color: #073642;
+	}
+	#header.mobile{
+		display:none;
+	}
+	#header.wide{
+		display:inline-block;
+		width: 15em;
+		position: fixed;
+		height:100%;
+	}	
+	#header.wide-box{
+      position: absolute;
+      width: 11em;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+	}
+	#content-block{
+		display: inline-block;
+		margin-left: 15em;
+		width: calc(100% - 16em);
+	}
+	#content{
+		width: 40em;
+		margin-top: 3em;
+		margin-left: auto;
+		margin-right: auto;
+	}
+	#content-wide{
+		width: 90em;
+		margin-top: 3em;
+		margin-left: auto;
+		margin-right: auto;
+	}
+	#comments{
+		width: 60em;
+		margin-left: auto;
+		margin-right: auto;
+	}
+}
+
+@media print {
+	color: #000000;
+	#header{
+		display:none;
+	}
+}

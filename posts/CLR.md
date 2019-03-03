@@ -1,0 +1,203 @@
+# Circulating Learning Rate and super-convergence
+
+The most visible recent achievements in the field of ML involve multitude of data and powerful models processed by multiple nodes. This general strategy is more feasible for large organisations, because
+we don't really have well-grounded understanding of processes involved in deep learning, but it is quite easy to just buy more hardware. However, not every aspect of DL can be made up by scale - some aspects,
+like training time, are of particular interest of individuals just because it is hard to obtain the right amount of compute. One such things is a solution used in winning [DAWNBench][1], where
+training times were several times lower than the best solutions presented by any other participant. The winning solutions used a phenomenon called _superconvergence_, which is based on a particular
+method of training ANNs using a variation of plain SGD, called Circulating Learning Rate. One characteristing thing about this approach is that the need for having a good learning rate is eliminated, as
+the CLR method tries several different learning rates during the training process. Since such a solution to iterate fast while solving the problem, and little need for parametrisation, 
+I found the method of interest for my personal use.
+
+### CLR as an optimizer
+
+Before trying to build a super-convergent model, I suggest reading [original Smith's paper that introduces CLR][2]. The basic idea is to circulate between lower and upper bound of possible learning rates
+according to some function and set number of updates over which the cycle closes. The paper explores several possible settings and proves it's feasibility of the approach, which is essentially a specific
+kind of optimizer.
+
+Optimizer interface in Keras requires you to provide a constructor, `get_updates()` and `get_config()` methods. While it may seem trivial, the optimizer itself has to operate on constructs from `keras.backend`,
+which is basically an abstraction over Tensorflow's graph nodes. What surprised me is that the `get_updates` method is called only once during compilation of the model - all the calculations are done
+somewhere in the Keras engine, you provide only a list of updates that has to be applied over each iteration. This seemed counterintuitive for me at first, but I completely understand the reasons for 
+this approach.
+
+```
+import keras
+import keras.backend as K
+
+
+class CLR(keras.optimizers.Optimizer):
+
+    step_functions = {
+        'triangular': lambda i, bounds, steps: K.control_flow_ops.cond(K.equal((i // steps) % 2, 0),
+            lambda: (bounds[1] - ((i % steps)) * ((bounds[1] - bounds[0]) // (steps - 1))),
+            lambda: (bounds[0] + ((i % steps)) * ((bounds[1] - bounds[0]) // (steps - 1))))
+        }
+
+    def __init__(self, bounds=(0.01, 3.), steps=15, momentum_bounds=0., step_function='triangular', **kwargs):
+        super(CLR, self).__init__(**kwargs)
+        self.learning_rate_bounds = K.constant(bounds)
+        self.momentum_bounds = K.constant(momentum_bounds if type(momentum_bounds) in [tuple, list] else (momentum_bounds, momentum_bounds))
+        self.steps = K.constant(steps)
+        self.step_function = self.step_functions[step_function]
+        self.lr = K.variable(bounds[0], name='lr')
+        self.momentum = K.variable(momentum_bounds[0] if type(momentum_bounds) in [tuple, list] else momentum_bounds, name='momentum')
+        self.iterations = K.variable(0, name='iterations')
+        K.get_session().run(self.iterations.initializer)
+
+    def get_updates(self, params, constraints, loss):
+        gradients = self.get_gradients(loss, params)
+        self.updates = []
+        self._update_runtime_parameters()  # this needs to be integrated into the loop...
+        shapes = [K.get_variable_shape(p) for p in params]
+        moments = [K.zeros(shape) for shape in shapes]
+        for param, grad, moment in zip(params, gradients, moments):
+            velocity = self.momentum * moment - self.lr * grad
+            self.updates.append(K.update(moment, velocity))
+            new_param = param + velocity
+            if param in constraints.keys():
+                constraint = constraints[param]
+                new_param = constraint(new_param)
+            self.updates.append(K.update(param, new_param))
+        return self.updates
+
+    def get_config(self):
+        config = {'learning_rate_bounds': self.learning_rate_bounds,
+                    'momentum_bounds': self.momentum_bounds,
+                    'steps': self.steps,
+                    'step_function': self.step_function}
+        base_config = super(CLR, self).get_config()
+        return dict(list(base_config.items()) + list(config.items()))
+
+    def _update_runtime_parameters(self):
+        self.lr = K.update(self.lr, K.variable(self.step_function(self.iterations, self.learning_rate_bounds, self.steps)))
+        self.momentum = K.update(self.momentum, K.variable(self.step_function(self.iterations, self.momentum_bounds, self.steps)))
+        self.updates.append(K.update(self.iterations, self.iterations + 1))
+```
+
+CLR is an optimizer, that's very similar in construction to stochastic gradient descent. The only difference is that each
+iteration changes the learning rate - which is reflected by rather complicated step_function. One thing to remember is that
+conditionals in Keras/Tensorflow graphs must be constructed using an Operator, not built-in Python if. Every change in the weights
+is reflected via `K.update` element, which changes one variable tensor into another variable tensor. The updates are later run
+by Keras' training function under the hood.
+
+Idea of CLR allows to use very different step functions, but the original paper suggest the simplest one, so only triangular function is available.
+
+### Experimental setting - MNIST
+
+As a starter, I compared the performance of the CLR optimizer with Adam on MNIST dataset. I've expected the model to converge under
+arbitrary settings, but CLR tends to work well under very similar circumstances to classic SGD... But it's not deep learning yet
+and the superconvergence is not achieved yet.
+
+```
+from keras.datasets import mnist
+from keras.layers import Input, Conv2D, Flatten, Dense, MaxPooling2D, Lambda
+
+def MNIST_model():
+    input_layer = Input([28, 28])
+    layer0 = Lambda(lambda x:K.expand_dims(x,3))(input_layer)
+    layer1 = Conv2D(32, kernel_size=3, strides = 2, activation = 'relu')(layer0)
+    layer3 = Conv2D(16, kernel_size=3, activation = 'relu')(layer1)
+    layer5 = Conv2D(20, kernel_size=3, strides = 2, activation = 'relu')(layer3)
+    flatten = Flatten()(layer5)
+    dense1 = Dense(64)(flatten)
+    dense2 = Dense(10, activation = 'softmax')(dense1)
+    m = keras.models.Model(input_layer, dense2)
+    return m
+
+(trainX, trainY), (testX, testY) = mnist.load_data()
+
+m = MNIST_model()
+m.compile(CLR([0.0005, 0.002], momentum_bounds=[0.95, 0.8], steps= 40), 'categorical_crossentropy')
+m.fit(trainX, keras.utils.to_categorical(trainY), epochs = 1)
+print((m.predict(testX).argmax(axis=1) == testY).mean())
+print(m.evaluate(testX, keras.utils.to_categorical(testY)))
+
+m = MNIST_model()
+m.compile(keras.optimizers.Adam(), 'categorical_crossentropy')
+m.fit(trainX, keras.utils.to_categorical(trainY), epochs = 1)
+print((m.predict(testX).argmax(axis=1) == testY).mean())
+print(m.evaluate(testX, keras.utils.to_categorical(testY)))
+
+
+m = MNIST_model()
+m.compile(keras.optimizers.SGD(0.001, momentum=0.8), 'categorical_crossentropy')
+m.fit(trainX, keras.utils.to_categorical(trainY), epochs = 1)
+print((m.predict(testX).argmax(axis=1) == testY).mean())
+print(m.evaluate(testX, keras.utils.to_categorical(testY)))
+```
+
+My accuracies and final losses are as follows:
+
+- CLR:  accuracy: 0.9664; MSE: 0.10296
+- Adam: accuracy: 0.9705; MSE: 0.10033
+- SGD:  accuracy: 0.9630; MSE: 0.12095
+
+I've expected CLR to work better than Adam, but still the results are impressive as for such a simple hack. Similar trends I've seen on partially trained residual network for cifar10: fine-tuned CLR
+ works faster than SGD, but Adam performs better.
+
+### What is superconvergence all about?
+
+Generally speaking, a super-convergent technique takes less time (in terms of iterations or compute) to reach optimal weights.
+Super-convergence is a controversial topic - the results are not clear and are [criticized on OpenReview][3]. On the other hand,
+it is praised by FastAI team, which used it to train image recognition modules in minutes.
+
+Super-convergence in DL training is understood as a method of fast training of models using single cycle of circular learning rate with small fine-tuning stage. It is contrary to our current intuition that
+tells us to _decrease_ learning rate as the training progresses. Leslie Smith in [his paper][4] claims that high learning rate acts as a regularizer and suggests to use reduced regularization means.
+
+I've created a sumple experiment using residual network with 8 residual layers. I've probably deviated from original Resnet formula.
+Here's the code:
+
+```
+def CIFAR_model():
+	input_layer = Input([32, 32, 3])
+	layer0 = Conv2D(128, kernel_size=3, strides=2, padding='same')(input_layer)
+	layer1 = BatchNormalization()(layer0)
+	layer2 = Activation('relu')(layer1)
+	for i in range(8):
+		layer3 = Conv2D(32, kernel_size=3, padding='same')(layer2)
+		layer4 = BatchNormalization()(layer3)
+		layer5 = Activation('relu')(layer4)
+		layer6 = Conv2D(128, kernel_size=3, padding='same')(layer5)
+		layer7 = BatchNormalization()(layer6)
+		layer8 = Activation('relu')(layer7)
+		layer9 = Conv2D(128, kernel_size=1)(concatenate([layer8, layer2]))
+		layer10 = BatchNormalization()(layer9)
+		layer2 = Activation('relu')(layer10)
+	conv = Conv2D(128, kernel_size=3)(layer2)
+	bn = BatchNormalization()(conv)
+	act = Activation('relu')(bn)
+	avg = AveragePooling2D(pool_size=14)(act)
+	flatten = Flatten()(avg)
+	output_layer = Dense(10, activation='softmax')(flatten)
+	return Model(input_layer, output_layer)
+```
+
+I've set up an experiment with CIFAR 10 dataset and this architecture. Optimal parameters for super-convergence of this model
+are set to be 0.1-3.5 learning rate bounds without momentum and with slight batch normalization. In the
+original paper the moving average rate for BatchNormalization was decreased from 0.999 to 0.95. Since the number
+of iteration in the epoch is 1200-something, I've conducted experiments for 8 and 64 for CLR and piecewise-constant(0.35, 0.035, 0.0035) training
+respectively. The results seemed not spectacular, however super-convergent model was fairly accurate:
+
+```
+Piecewise constant: final loss = 0.002; final accuracy = 0.5015
+Super-convergent:   final loss = 0.941; final accuracy = 0.8636
+```
+
+I've overfit the baseline. Yet, the super-convergent model achieved fairly good accuracy in very small amount of time. What would happen if we used SGD with preset learning rate instead? The effects surprised me:
+
+
+```
+Constant for 8 epochs: final loss = 0.4117; final accuracy = 0.5656
+Constant for 12 epochs: final loss = 0.2494; final accuracy = 0.716
+```
+
+The loss was lower, but actual model accuracy didn't improve much. I've repeated the experiment as I could not believe it. The super-convergent model indeed is more efficient.
+The real competitor was Adam optimizer tho, so I give it a chance:
+
+```
+Adam for 8 epochs: final loss = 0.3487; final accuracy = 0.6429
+```
+
+[1]: link needed
+[2]: https://arxiv.org/pdf/1506.01186.pdf
+[3]: https://openreview.net/forum?id=H1A5ztj3b
+[4]: link needed 
