@@ -4,8 +4,6 @@ title: Progressive neural networks
 author: PT
 ---
 
-# Progressive neural networks
-
 In this text, I present an introduction to progressive neural networks, which is an interesting multi-task architecture; I also introduce an example implementation in Keras.
 
 Multi-task learning is fairly hot topic recently. Indeed, using multiple datasets, especially when they're prepared for different tasks, is alluring in the world of data scarcity (annotated, it is).

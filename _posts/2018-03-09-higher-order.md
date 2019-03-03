@@ -4,8 +4,6 @@ title: Higher order layers
 author: PT
 ---
 
-# Higher order layers
-
 What would happen if we wanted neural network to predict weight of the proper network? We can actually
 do this on runtime. Calculation of weights as a Dense of inputs means that we effectively combine
 each input variable with each other (and we do this twice). Addition of activation function may change
