@@ -9,5 +9,12 @@ kramdown:
     # Use existing pygments syntax highlighting css
     css_class: 'highlight'
 
+defaults:
+  -
+    scope:
+      path: ""
+    values:
+      layout: "default"
+
 permalink: :title/
 baseurl: "https://zantyr.github.io"
