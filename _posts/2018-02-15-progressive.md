@@ -1,5 +1,5 @@
 ---
-layout: default
+layout: root
 title: Progressive neural networks
 author: PT
 ---

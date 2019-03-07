@@ -1,5 +1,5 @@
 ---
-layout: default
+layout: root
 title: Higher order layers
 author: PT
 ---
