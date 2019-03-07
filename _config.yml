@@ -14,7 +14,7 @@ defaults:
     scope:
       path: ""
     values:
-      layout: "default"
+      layout: "root"
 
 permalink: :title/
 baseurl: "https://zantyr.github.io"

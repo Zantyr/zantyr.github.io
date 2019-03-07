@@ -1,5 +1,5 @@
 ---
-title: Today I learned
+title: Today I learned - 2019-03-06
 date: 2019-03-06
 tags: [TIL]
 ---
