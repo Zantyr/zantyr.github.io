@@ -2,6 +2,7 @@
 layout: root
 title: Progressive neural networks
 author: PT
+tags: [old, ML]
 ---
 
 In this text, I present an introduction to progressive neural networks, which is an interesting multi-task architecture; I also introduce an example implementation in Keras.

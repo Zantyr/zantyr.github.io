@@ -2,6 +2,7 @@
 layout: root
 title: Higher order layers
 author: PT
+tags: [old, ML, experiment]
 ---
 
 What would happen if we wanted neural network to predict weight of the proper network? We can actually

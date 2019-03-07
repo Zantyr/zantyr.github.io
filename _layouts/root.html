@@ -20,17 +20,28 @@
      <div id="header" class="wide">
       <div id="header" class="wide-box">
         <ul class="no-decor">
-          <li><a href="/index.html"> main </a></li>
-          <li><a href="/list.html"> articles </a></li>
-          <li><a href="/about.html"> author </a></li>
+          <li><a href="/"> main </a></li>
+          <li><a href="/list"> articles </a></li>
+          <li><a href="/about"> author </a></li>
         </ul>
       </div>
      </div>
     <div id='header' class='mobile'>
-      <a href="/index.html"> main </a>
-      <a href="/list.html"> articles </a>
-      <a href="/about.html"> author </a>
+      <a href="/"> main </a>
+      <a href="/list"> articles </a>
+      <a href="/about"> author </a>
     </div>
+    {% if post %}
+    <div class="post-headline">
+      By: {{ post.author }}&nbsp;
+      Date: {{ post.date }}&nbsp;
+      Tags:&nbsp;
+      {% for tag in post.tags %}
+      {{category}}
+      {% unless forloop.last %}&nbsp;{% endunless %}
+      {% endfor %}
+    </div>
+    {% endif %}
     <div id="content-block">
       {{ content }}
       {{ post.content }}
