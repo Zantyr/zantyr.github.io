@@ -2,18 +2,28 @@
 layout: root
 ---
 
-Ideas:
+## Curiosity driven learning
 
-Curiosity driven learning
+Create a metric for building models part-by-part by selecting transforms that reduce dimensionality
+while keeping maximum novelty for the classifier.
 
-Invariance-based superresolution and solving equation for "perfect" solutions. Can it be solved
-analytically? We need to attract inputs and take outputs as the solution for the ResNet module.
-And can we actually use the censored models for that?
+One negative result of experimentation [here](bin/Curiosity.ipynb). I genuinely think this is doable, proper approach is needed. The method must be linear in time and maximize a proper metric over a dataset.
 
+## Invariance-based superresolution
 
+Solving equation for "perfect" solutions. Can it be solved analytically? We need to attract inputs and take outputs as the solution for the ResNet module. And can we actually use the censored models for that?
 
-Domain side measurements - given hidden activations in range [0-1], how far do the inputs span?
+## Domain size measurements
+
+Domain size measurements - given hidden activations in range [0-1], how far do the inputs span?
 Generally we want features to be meaningfully generated in only subspace of inputs
 
+## Keeper cell
 
-<some ideas are on google drive>
+RNN activation layer that keeps the previous activation and is excited if there is a difference from the previous state
+This would saturate to some constant (zero?) over time if the observation is constant, and have a large peak on changes.
+Comparable to BatchNorm (running norm) in time
+
+## Car computer with ASR for hands-free using of various functions
+
+Someone for sure has this in their head. This is only for me to remember that this may be a neat sideproject.
