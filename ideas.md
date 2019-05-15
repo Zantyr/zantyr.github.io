@@ -27,3 +27,10 @@ Comparable to BatchNorm (running norm) in time
 ## Car computer with ASR for hands-free using of various functions
 
 Someone for sure has this in their head. This is only for me to remember that this may be a neat sideproject.
+
+## Alternate formulations for training of networks
+
+Rationale: SGD is chaotic. There are lots of other optimization techniques. Why are not they used? Does SGD beat
+other trainers? Linear regression is solvable analytically. Can there be an analytic expression for other models?
+(probably not, due to non-linearities). Can ReLU models be calculated linearly as censored regression? (values under zero
+are treated as unknown and not penalized). 
